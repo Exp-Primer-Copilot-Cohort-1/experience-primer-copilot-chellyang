@@ -4,61 +4,68 @@ const router = express.Router();
 const pool = require('../pool');
 
 // 1.添加评论
-router.post('/add', (req, res) => {
+router.post('/add',(req,res)=>{
     let obj = req.body;
-    console.log(obj);
-    if (!obj.uname) {
-        res.send({ code: 401, msg: 'uname required' });
-        return;
-    }
-    if (!obj.content) {
-        res.send({ code: 402, msg: 'content required' });
-        return;
-    }
-    if (!obj.cid) {
-        res.send({ code: 403, msg: 'cid required' });
-        return;
-    }
-    let sql = 'INSERT INTO comments SET ?';
-    pool.query(sql, obj, (err, result) => {
-        if (err) throw err;
-        if (result.affectedRows > 0) {
-            res.send({ code: 200, msg: 'add success' });
-        } else {
-            res.send({ code: 301, msg: 'add error' });
+    let sql = 'INSERT INTO comment SET ?';
+    pool.query(sql,[obj],(err,result)=>{
+        if(err) throw err;
+        if(result.affectedRows>0){
+            res.send({code:200,msg:'添加成功'});
+        }else{
+            res.send({code:400,msg:'添加失败'});
         }
     });
 });
 
-// 2.查询评论
-router.get('/list', (req, res) => {
-    let cid = req.query.cid;
-    let sql = 'SELECT * FROM comments WHERE cid=? ORDER BY ctime DESC';
-    pool.query(sql, [cid], (err, result) => {
-        if (err) throw err;
-        if (result.length > 0) {
-            res.send({ code: 200, msg: 'list success', data: result });
-        } else {
-            res.send({ code: 301, msg: 'list error' });
-        }
+// 2.获取评论列表
+router.get('/list',(req,res)=>{
+    let pno = req.query.pno;
+    let pageSize = req.query.pageSize;
+    let sql = 'SELECT * FROM comment LIMIT ?,?';
+    let offset = (pno-1)*pageSize;
+    pageSize = parseInt(pageSize);
+    pool.query(sql,[offset,pageSize],(err,result)=>{
+        if(err) throw err;
+        res.send({code:200,msg:'查询成功',data:result});
     });
 });
 
 // 3.删除评论
-router.get('/delete', (req, res) => {
-    let cid = req.query.cid;
-    let sql = 'DELETE FROM comments WHERE cid=?';
-    pool.query(sql, [cid], (err, result) => {
-        if (err) throw err;
-        if (result.affectedRows > 0) {
-            res.send({ code: 200, msg: 'delete success' });
-        } else {
-            res.send({ code: 301, msg: 'delete error' });
+router.get('/delete',(req,res)=>{
+    let id = req.query.id;
+    let sql = 'DELETE FROM comment WHERE id=?';
+    pool.query(sql,[id],(err,result)=>{
+        if(err) throw err;
+        if(result.affectedRows>0){
+            res.send({code:200,msg:'删除成功'});
+        }else{
+            res.send({code:400,msg:'删除失败'});
         }
     });
 });
 
-// 4.查询所有评论
-router.get('/all', (req, res) => {
-    let sql = 'SELECT * FROM comments ORDER BY ctime DESC';
-    pool.query(sql,
+// 4.修改评论
+router.post('/update',(req,res)=>{
+    let obj = req.body;
+    let sql = 'UPDATE comment SET ? WHERE id=?';
+    pool.query(sql,[obj,obj.id],(err,result)=>{
+        if(err) throw err;
+        if(result.affectedRows>0){
+            res.send({code:200,msg:'修改成功'});
+        }else{
+            res.send({code:400,msg:'修改失败'});
+        }
+    });
+});
+
+// 5.根据id查询评论
+router.get('/detail',(req,res)=>{
+    let id = req.query.id;
+    let sql = 'SELECT * FROM comment WHERE id=?';
+    pool.query(sql,[id],(err,result)=>{
+        if(err) throw err;
+        res.send({code:200,msg:'查询成功',data:result[0]});
+    });
+});
+
+module.exports = router;
