@@ -1,72 +1,74 @@
 // 创建Web服务器
-var express = require('express');
-var router = express.Router();
-var pool = require('../pool');
+const express = require('express');
+const router = express.Router();
+const pool = require('../pool');
 
-// 1.发表评论
-router.post('/add', function (req, res) {
-    var obj = req.body;
-    var sql = 'INSERT INTO comment SET ?';
-    pool.query(sql, [obj], function (err, result) {
-        if (err) throw err;
-        if (result.affectedRows > 0) {
-            res.send({
-                code: 200,
-                msg: '评论发表成功'
-            });
-        } else {
-            res.send({
-                code: 301,
-                msg: '评论发表失败'
-            });
-        }
-    });
-});
-
-// 2.查询评论
-router.get('/list', function (req, res) {
-    var obj = req.query;
-    var pno = obj.pno;
-    var size = obj.size;
-    if (!pno) {
-        pno = 1;
+// 1. 添加评论
+router.post('/add', (req, res) => {
+  // 获取用户输入的评论内容和对应的文章id
+  let obj = req.body;
+  // 执行SQL命令
+  let sql = 'INSERT INTO comments SET ?';
+  pool.query(sql, [obj], (err, result) => {
+    if (err) throw err;
+    if (result.affectedRows > 0) {
+      res.send({
+        code: 200,
+        msg: 'add comment success'
+      });
+    } else {
+      res.send({
+        code: 400,
+        msg: 'add comment error'
+      });
     }
-    if (!size) {
-        size = 5;
+  });
+});
+
+// 2. 查询评论
+router.get('/list', (req, res) => {
+  // 获取用户传递的文章id
+  let aid = req.query.aid;
+  // 执行SQL命令
+  let sql = 'SELECT * FROM comments WHERE aid=?';
+  pool.query(sql, [aid], (err, result) => {
+    if (err) throw err;
+    if (result.length > 0) {
+      res.send({
+        code: 200,
+        msg: 'select comment success',
+        data: result
+      });
+    } else {
+      res.send({
+        code: 400,
+        msg: 'select comment error'
+      });
     }
-    pno = parseInt(pno);
-    size = parseInt(size);
-    var start = (pno - 1) * size;
-    var sql = 'SELECT cid,ctime,content,uname,avatar FROM comment,user WHERE comment.user_id=user.uid ORDER BY cid DESC LIMIT ?,?';
-    pool.query(sql, [start, size], function (err, result) {
-        if (err) throw err;
-        res.send({
-            code: 200,
-            msg: '查询成功',
-            data: result
-        });
-    });
+  });
 });
 
-// 3.删除评论
-router.get('/delete', function (req, res) {
-    var obj = req.query;
-    var cid = obj.cid;
-    var sql = 'DELETE FROM comment WHERE cid=?';
-    pool.query(sql, [cid], function (err, result) {
-        if (err) throw err;
-        if (result.affectedRows > 0) {
-            res.send({
-                code: 200,
-                msg: '删除成功'
-            });
-        } else {
-            res.send({
-                code: 301,
-                msg: '删除失败'
-            });
-        }
-    });
+// 3. 删除评论
+router.get('/delete', (req, res) => {
+  // 获取用户传递的评论id
+  let id = req.query.id;
+  // 执行SQL命令
+  let sql = 'DELETE FROM comments WHERE id=?';
+  pool.query(sql, [id], (err, result) => {
+    if (err) throw err;
+    if (result.affectedRows > 0) {
+      res.send({
+        code: 200,
+        msg: 'delete comment success'
+      });
+    } else {
+      res.send({
+        code: 400,
+        msg: 'delete comment error'
+      });
+    }
+  });
 });
 
+// 导出路由器对象
 module.exports = router;
